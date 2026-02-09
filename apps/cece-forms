@@ -1,71 +1,31 @@
 #!/bin/bash
-# CECE-FORMS v1.0 - Our Own Google Forms/Typeform
+# CECE-FORMS v1.0 - Form Builder
 FORMS_DIR=~/cece/forms
-mkdir -p "$FORMS_DIR/forms" "$FORMS_DIR/responses"
 
-create_form() {
+create() {
     NAME="$1"
-    FORM_DIR="$FORMS_DIR/forms/$NAME"
-    mkdir -p "$FORM_DIR"
-    echo "name: $NAME" > "$FORM_DIR/form.info"
-    echo "created: $(date -Iseconds)" >> "$FORM_DIR/form.info"
-    echo "✅ Form created: $NAME"
-}
-
-add_question() {
-    FORM="$1"
-    QUESTION="$2"
-    TYPE="${3:-text}"
-    FORM_DIR="$FORMS_DIR/forms/$FORM"
-    Q_NUM=$(ls "$FORM_DIR"/q-*.txt 2>/dev/null | wc -l)
-    Q_NUM=$((Q_NUM + 1))
-    echo "question: $QUESTION" > "$FORM_DIR/q-$Q_NUM.txt"
-    echo "type: $TYPE" >> "$FORM_DIR/q-$Q_NUM.txt"
-    echo "✅ Added question $Q_NUM"
-}
-
-fill_form() {
-    FORM="$1"
-    FORM_DIR="$FORMS_DIR/forms/$FORM"
-    RESPONSE_ID=$(date +%s)
-    RESPONSE_FILE="$FORMS_DIR/responses/${FORM}_${RESPONSE_ID}.response"
+    FIELDS="$2"
+    FORM_FILE="$FORMS_DIR/$NAME.html"
     
-    echo "📝 Filling form: $FORM"
-    echo "═══════════════════════════════════════"
-    echo ""
+    echo "<!DOCTYPE html><html><head><title>$NAME</title>" > "$FORM_FILE"
+    echo "<style>body{font-family:system-ui;max-width:500px;margin:40px auto;padding:20px;background:#0a0a0a;color:#fff;}" >> "$FORM_FILE"
+    echo "input,textarea{width:100%;padding:12px;margin:10px 0;border:1px solid #333;background:#1a1a1a;color:#fff;border-radius:8px;}" >> "$FORM_FILE"
+    echo "button{background:linear-gradient(90deg,#F5A623,#FF1D6C);color:#fff;padding:15px 30px;border:none;border-radius:8px;cursor:pointer;font-size:16px;width:100%;}" >> "$FORM_FILE"
+    echo "label{color:#aaa;}</style></head><body>" >> "$FORM_FILE"
+    echo "<h1 style=\"color:#FF1D6C;\">$NAME</h1><form action=\"/submit\" method=\"post\">" >> "$FORM_FILE"
     
-    for q in "$FORM_DIR"/q-*.txt; do
-        [ -f "$q" ] || continue
-        QUESTION=$(grep "question:" "$q" | cut -d: -f2-)
-        echo "$QUESTION"
-        read -r answer
-        echo "$(basename $q .txt):$answer" >> "$RESPONSE_FILE"
+    IFS=","
+    for field in $FIELDS; do
+        echo "<label>$field</label><input type=\"text\" name=\"$field\" required>" >> "$FORM_FILE"
     done
     
-    echo ""
-    echo "✅ Response submitted!"
-}
-
-view_responses() {
-    FORM="$1"
-    echo "📊 Responses for: $FORM"
-    echo "═══════════════════════════════════════"
-    for r in "$FORMS_DIR/responses/${FORM}_"*.response 2>/dev/null; do
-        [ -f "$r" ] || continue
-        echo "--- Response $(basename $r .response | cut -d_ -f2) ---"
-        cat "$r"
-        echo ""
-    done
+    echo "<button type=\"submit\">Submit</button></form>" >> "$FORM_FILE"
+    echo "<p style=\"color:#666;margin-top:20px;\">Powered by CECE Forms</p></body></html>" >> "$FORM_FILE"
+    echo "Form: $FORM_FILE"
 }
 
 case "$1" in
-    new) create_form "$2" ;;
-    question) add_question "$2" "$3" "$4" ;;
-    fill) fill_form "$2" ;;
-    responses) view_responses "$2" ;;
-    *) echo "🖤 CECE-FORMS - Our Own Google Forms"
-       echo "  new <name>                    Create form"
-       echo "  question <form> <q> [type]    Add question"
-       echo "  fill <form>                   Fill out form"
-       echo "  responses <form>              View responses" ;;
+    create) create "$2" "$3" ;;
+    list) ls "$FORMS_DIR"/*.html 2>/dev/null || echo "(none)" ;;
+    *) echo "CECE-FORMS: create <name> <field1,field2,field3>" ;;
 esac

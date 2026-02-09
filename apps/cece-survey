@@ -1,65 +1,38 @@
 #!/bin/bash
-# CECE-SURVEY v1.0 - Our Own SurveyMonkey/Typeform
+# CECE-SURVEY v1.0 - Survey Builder
 SURVEY_DIR=~/cece/surveys
-mkdir -p "$SURVEY_DIR/surveys" "$SURVEY_DIR/responses"
+mkdir -p "$SURVEY_DIR"
 
-create_survey() {
+create() {
     NAME="$1"
-    mkdir -p "$SURVEY_DIR/surveys/$NAME"
-    echo "name: $NAME" > "$SURVEY_DIR/surveys/$NAME/survey.info"
-    echo "created: $(date -Iseconds)" >> "$SURVEY_DIR/surveys/$NAME/survey.info"
-    echo "✅ Survey created: $NAME"
-}
-
-add_question() {
-    SURVEY="$1"
-    QUESTION="$2"
-    OPTIONS="$3"
-    Q_NUM=$(ls "$SURVEY_DIR/surveys/$SURVEY"/q-*.txt 2>/dev/null | wc -l)
-    Q_NUM=$((Q_NUM + 1))
-    echo "question: $QUESTION" > "$SURVEY_DIR/surveys/$SURVEY/q-$Q_NUM.txt"
-    echo "options: $OPTIONS" >> "$SURVEY_DIR/surveys/$SURVEY/q-$Q_NUM.txt"
-    echo "✅ Question $Q_NUM added"
-}
-
-take_survey() {
-    SURVEY="$1"
-    RESPONSE_ID=$(date +%s)
-    RESPONSE_FILE="$SURVEY_DIR/responses/${SURVEY}_${RESPONSE_ID}.response"
+    QUESTIONS="$2"
+    SURVEY="$SURVEY_DIR/$NAME.html"
     
-    echo "📋 Taking survey: $SURVEY"
-    echo "═══════════════════════════════════════"
+    echo "<!DOCTYPE html><html><head><title>$NAME Survey</title>" > "$SURVEY"
+    echo "<style>body{font-family:system-ui;background:#0a0a0a;color:#fff;padding:40px;max-width:600px;margin:0 auto;}" >> "$SURVEY"
+    echo ".question{background:#1a1a1a;padding:20px;margin:15px 0;border-radius:8px;}" >> "$SURVEY"
+    echo "input[type=radio]{margin-right:10px;}" >> "$SURVEY"
+    echo "button{background:#FF1D6C;color:white;padding:15px 40px;border:none;border-radius:8px;cursor:pointer;font-size:16px;}</style></head><body>" >> "$SURVEY"
+    echo "<h1 style=\"color:#FF1D6C;\">$NAME</h1>" >> "$SURVEY"
     
-    for q in "$SURVEY_DIR/surveys/$SURVEY"/q-*.txt 2>/dev/null; do
-        [ -f "$q" ] || continue
-        QUESTION=$(grep "question:" "$q" | cut -d: -f2-)
-        OPTIONS=$(grep "options:" "$q" | cut -d: -f2-)
-        echo ""
-        echo "$QUESTION"
-        [ -n "$OPTIONS" ] && echo "  Options: $OPTIONS"
-        read -r answer
-        echo "$(basename $q .txt):$answer" >> "$RESPONSE_FILE"
+    i=1
+    IFS="|"
+    for q in $QUESTIONS; do
+        echo "<div class=\"question\"><p>$i. $q</p>" >> "$SURVEY"
+        for opt in "Strongly Agree" "Agree" "Neutral" "Disagree" "Strongly Disagree"; do
+            echo "<label><input type=\"radio\" name=\"q$i\" value=\"$opt\"> $opt</label><br>" >> "$SURVEY"
+        done
+        echo "</div>" >> "$SURVEY"
+        ((i++))
     done
     
-    echo ""
-    echo "✅ Survey submitted!"
-}
-
-results() {
-    SURVEY="$1"
-    echo "📊 Results for: $SURVEY"
-    TOTAL=$(ls "$SURVEY_DIR/responses/${SURVEY}_"*.response 2>/dev/null | wc -l)
-    echo "  Total responses: $TOTAL"
+    echo "<button type=\"submit\">Submit Survey</button>" >> "$SURVEY"
+    echo "<p style=\"color:#666;margin-top:30px;\">Powered by CECE Surveys</p></body></html>" >> "$SURVEY"
+    echo "Survey: $SURVEY"
 }
 
 case "$1" in
-    new) create_survey "$2" ;;
-    question) add_question "$2" "$3" "$4" ;;
-    take) take_survey "$2" ;;
-    results) results "$2" ;;
-    *) echo "🖤 CECE-SURVEY - Our Own SurveyMonkey"
-       echo "  new <name>                     Create survey"
-       echo "  question <survey> <q> [opts]   Add question"
-       echo "  take <survey>                  Take survey"
-       echo "  results <survey>               View results" ;;
+    create) create "$2" "$3" ;;
+    list) ls "$SURVEY_DIR"/*.html 2>/dev/null || echo "(none)" ;;
+    *) echo "CECE-SURVEY: create <name> \"question1|question2|question3\"" ;;
 esac

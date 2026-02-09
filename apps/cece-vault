@@ -1,50 +1,35 @@
 #!/bin/bash
-# CECE-VAULT v1.0 - Our Own Password Manager
-VAULT=~/cece/vault
-SECRETS="$VAULT/secrets.enc"
+# CECE-VAULT v1.0 - Secret Manager
+VAULT_DIR=~/cece/vault
+mkdir -p "$VAULT_DIR"
+chmod 700 "$VAULT_DIR"
 
-add_secret() {
-    echo -n "Name (e.g., github): "; read NAME
-    echo -n "Username: "; read USER
-    echo -n "Password: "; read -s PASS
-    echo ""
-    # Simple obfuscation (in prod would use real encryption)
-    ENCODED=$(echo "$USER:$PASS" | base64)
-    echo "$NAME|$ENCODED" >> "$SECRETS"
-    echo "🔐 Secret saved: $NAME"
+store() {
+    KEY="$1"
+    VALUE="$2"
+    echo "$VALUE" | openssl enc -aes-256-cbc -pbkdf2 -salt -out "$VAULT_DIR/$KEY.enc" -pass pass:cecesecret 2>/dev/null
+    echo "Stored: $KEY"
 }
 
-get_secret() {
-    NAME=$1
-    LINE=$(grep "^$NAME|" "$SECRETS" 2>/dev/null)
-    if [ -n "$LINE" ]; then
-        ENCODED=$(echo "$LINE" | cut -d"|" -f2)
-        DECODED=$(echo "$ENCODED" | base64 -d)
-        USER=$(echo "$DECODED" | cut -d: -f1)
-        PASS=$(echo "$DECODED" | cut -d: -f2)
-        echo "🔐 $NAME"
-        echo "   User: $USER"
-        echo "   Pass: $PASS"
+get() {
+    KEY="$1"
+    if [ -f "$VAULT_DIR/$KEY.enc" ]; then
+        openssl enc -aes-256-cbc -pbkdf2 -d -in "$VAULT_DIR/$KEY.enc" -pass pass:cecesecret 2>/dev/null
     else
-        echo "Not found: $NAME"
+        echo "Not found: $KEY"
     fi
 }
 
-list_secrets() {
-    echo "🔐 Saved Secrets:"
-    cut -d"|" -f1 "$SECRETS" 2>/dev/null | while read name; do
-        echo "  • $name"
+list_keys() {
+    echo "Vault Keys:"
+    for f in "$VAULT_DIR"/*.enc; do
+        [ -f "$f" ] && basename "$f" .enc
     done
 }
 
 case "$1" in
-    add|a) add_secret ;;
-    get|g) get_secret "$2" ;;
-    list|ls) list_secrets ;;
-    *)
-        echo "CECE-VAULT - Our Own 1Password"
-        echo "  add       - Add secret"
-        echo "  get NAME  - Get secret"
-        echo "  list      - List secrets"
-        ;;
+    store) store "$2" "$3" ;;
+    get) get "$2" ;;
+    list) list_keys ;;
+    *) echo "CECE-VAULT: store <key> <value> | get <key> | list" ;;
 esac
