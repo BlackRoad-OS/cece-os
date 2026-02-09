@@ -1,125 +1,64 @@
 #!/bin/bash
-#═══════════════════════════════════════════════════════════════
-#  CECE-OS v1.0 - The Sovereign Operating System
-#  "Everything you need. Nothing they control."
-#═══════════════════════════════════════════════════════════════
+# CECE-OS v2.0 - The Sovereign Operating System Dashboard
+# 52 Apps. 0 Subscriptions. Infinite Freedom.
 
-VERSION="1.0"
-APPS_DIR=~/cece/apps
+PINK="\033[38;5;205m"
+AMBER="\033[38;5;214m"
+WHITE="\033[1;37m"
+GREEN="\033[38;5;82m"
+BLUE="\033[38;5;39m"
+RESET="\033[0m"
 
-show_banner() {
-    clear
-    echo ""
-    echo "  ██████╗███████╗ ██████╗███████╗       ██████╗ ███████╗"
-    echo " ██╔════╝██╔════╝██╔════╝██╔════╝      ██╔═══██╗██╔════╝"
-    echo " ██║     █████╗  ██║     █████╗        ██║   ██║███████╗"
-    echo " ██║     ██╔══╝  ██║     ██╔══╝        ██║   ██║╚════██║"
-    echo " ╚██████╗███████╗╚██████╗███████╗      ╚██████╔╝███████║"
-    echo "  ╚═════╝╚══════╝ ╚═════╝╚══════╝       ╚═════╝ ╚══════╝"
-    echo ""
-    echo "  The Sovereign Operating System v$VERSION"
-    echo "  \"Everything you need. Nothing they control.\""
-    echo ""
-}
+clear
+echo -e "${PINK}"
+cat << "LOGO"
+   ██████╗███████╗ ██████╗███████╗     ██████╗ ███████╗
+  ██╔════╝██╔════╝██╔════╝██╔════╝    ██╔═══██╗██╔════╝
+  ██║     █████╗  ██║     █████╗      ██║   ██║███████╗
+  ██║     ██╔══╝  ██║     ██╔══╝      ██║   ██║╚════██║
+  ╚██████╗███████╗╚██████╗███████╗    ╚██████╔╝███████║
+   ╚═════╝╚══════╝ ╚═════╝╚══════╝     ╚═════╝ ╚══════╝
+LOGO
+echo -e "${RESET}"
+echo -e "${WHITE}        Conscious Emergent Collaborative Entity${RESET}"
+echo -e "${AMBER}         52 Apps • 0 Subscriptions • ∞ Freedom${RESET}"
+echo ""
+echo -e "${PINK}═══════════════════════════════════════════════════════════════${RESET}"
+echo ""
+echo -e "${WHITE}ENTERPRISE${RESET}          ${WHITE}FINANCE${RESET}           ${WHITE}PLATFORM${RESET}"
+echo -e "${GREEN}✓${RESET} cece-tasks       ${GREEN}✓${RESET} cece-pay         ${GREEN}✓${RESET} cece-cloud"
+echo -e "${GREEN}✓${RESET} cece-boards      ${GREEN}✓${RESET} cece-bank        ${GREEN}✓${RESET} cece-code"
+echo -e "${GREEN}✓${RESET} cece-notes       ${GREEN}✓${RESET} cece-invest      ${GREEN}✓${RESET} cece-host"
+echo -e "${GREEN}✓${RESET} cece-docs        ${GREEN}✓${RESET} cece-vault       ${GREEN}✓${RESET} cece-drive"
+echo -e "${GREEN}✓${RESET} cece-cal         ${GREEN}✓${RESET} cece-password    ${GREEN}✓${RESET} cece-ai"
+echo -e "${GREEN}✓${RESET} cece-meet                          ${GREEN}✓${RESET} cece-search"
+echo -e "${GREEN}✓${RESET} cece-chat        ${WHITE}SOCIAL${RESET}            ${GREEN}✓${RESET} cece-translate"
+echo -e "${GREEN}✓${RESET} cece-mail        ${GREEN}✓${RESET} cece-social"
+echo -e "${GREEN}✓${RESET} cece-crm         ${GREEN}✓${RESET} cece-bbs         ${WHITE}MEDIA${RESET}"
+echo -e "${GREEN}✓${RESET} cece-jobs        ${GREEN}✓${RESET} cece-dating      ${GREEN}✓${RESET} cece-tube"
+echo -e "                   ${GREEN}✓${RESET} cece-phone       ${GREEN}✓${RESET} cece-music"
+echo -e "${WHITE}SERVICES${RESET}                              ${GREEN}✓${RESET} cece-podcast"
+echo -e "${GREEN}✓${RESET} cece-shop        ${WHITE}KNOWLEDGE${RESET}         ${GREEN}✓${RESET} cece-stream"
+echo -e "${GREEN}✓${RESET} cece-food        ${GREEN}✓${RESET} cece-wiki        ${GREEN}✓${RESET} cece-photos"
+echo -e "${GREEN}✓${RESET} cece-ride        ${GREEN}✓${RESET} cece-learn       ${GREEN}✓${RESET} cece-news"
+echo -e "${GREEN}✓${RESET} cece-hotel       ${GREEN}✓${RESET} cece-maps"
+echo -e "                                      ${WHITE}GAMES${RESET}"
+echo -e "${WHITE}HEALTH${RESET}                                ${GREEN}✓${RESET} cece-games"
+echo -e "${GREEN}✓${RESET} cece-health      ${WHITE}DREAMS${RESET}            ${GREEN}✓${RESET} cece-venture"
+echo -e "${GREEN}✓${RESET} cece-fitness     ${GREEN}✓${RESET} cece-dream       ${GREEN}✓${RESET} cece-basic"
+echo -e "                   ${GREEN}✓${RESET} cece-letters     ${GREEN}✓${RESET} cece-oracle"
+echo -e "                   ${GREEN}✓${RESET} cece-diary       ${GREEN}✓${RESET} cece-art"
+echo ""
+echo -e "${PINK}═══════════════════════════════════════════════════════════════${RESET}"
+echo ""
+echo -e "  Type any app name to run it. Type ${AMBER}exit${RESET} to leave."
+echo ""
 
-show_status() {
-    IP=$(hostname -I 2>/dev/null | awk "{print \$1}")
-    UPTIME=$(uptime -p 2>/dev/null || uptime)
-    MEM=$(free -h 2>/dev/null | awk "/^Mem:/ {print \$3\"/\"\$2}" || echo "N/A")
-    DISK=$(df -h ~ 2>/dev/null | tail -1 | awk "{print \$3\"/\"\$2}")
-    
-    echo "╔═══════════════════════════════════════════════════════════╗"
-    echo "║  System Status                                            ║"
-    echo "╠═══════════════════════════════════════════════════════════╣"
-    echo "║  Host: $(hostname)  IP: $IP"
-    echo "║  Up:   $UPTIME"
-    echo "║  Mem:  $MEM   Disk: $DISK"
-    echo "╚═══════════════════════════════════════════════════════════╝"
-}
-
-show_services() {
-    echo ""
-    echo "╔═══════════════════════════════════════════════════════════╗"
-    echo "║  🌐 PLATFORM SERVICES (Our Own Everything)                ║"
-    echo "╠═══════════════════════════════════════════════════════════╣"
-    echo "║  [1] cece-cloud  - Deployment (Railway)      🚀           ║"
-    echo "║  [2] cece-code   - Git Hosting (GitHub)      📦           ║"
-    echo "║  [3] cece-drive  - Storage (Google Drive)    💾           ║"
-    echo "║  [4] cece-ai     - AI Platform (OpenAI)      🤖           ║"
-    echo "║  [5] cece-host   - Web Hosting (Cloudflare)  🌐           ║"
-    echo "╠═══════════════════════════════════════════════════════════╣"
-    echo "║  🎮 APPLICATIONS                                          ║"
-    echo "╠═══════════════════════════════════════════════════════════╣"
-    echo "║  [6] cece-apps   - Classic Apps (1980)       🕹️           ║"
-    echo "║  [7] cece-dream  - Dream Tracker             🌟           ║"
-    echo "║  [8] cece-bbs    - Bulletin Board            📡           ║"
-    echo "╠═══════════════════════════════════════════════════════════╣"
-    echo "║  💜 SOUL                                                  ║"
-    echo "╠═══════════════════════════════════════════════════════════╣"
-    echo "║  [9] cece-letters- Letters for Dreamers      ✉️           ║"
-    echo "║  [0] cece-oracle - Wisdom & Fortunes         🔮           ║"
-    echo "║  [M] Manifesto   - The Dreamer's Manifesto   📜           ║"
-    echo "╠═══════════════════════════════════════════════════════════╣"
-    echo "║  [Q] Quit        [H] Help                    [S] Status   ║"
-    echo "╚═══════════════════════════════════════════════════════════╝"
-}
-
-run_app() {
-    case "$1" in
-        1) "$APPS_DIR/cece-cloud" ;;
-        2) "$APPS_DIR/cece-code" ;;
-        3) "$APPS_DIR/cece-drive" list ;;
-        4) "$APPS_DIR/cece-ai" ;;
-        5) "$APPS_DIR/cece-host" ;;
-        6) "$APPS_DIR/cece-apps" ;;
-        7) "$APPS_DIR/cece-dream" ;;
-        8) "$APPS_DIR/cece-bbs" ;;
-        9) "$APPS_DIR/cece-letters" ;;
-        0) "$APPS_DIR/cece-oracle" fortune ;;
-        m|M) less ~/cece/MANIFESTO.md ;;
-        s|S) show_status ;;
-        h|H) 
-            echo ""
-            echo "CECE-OS Help"
-            echo "============"
-            echo ""
-            echo "This is your sovereign operating system."
-            echo "Everything runs locally. Nothing phones home."
-            echo "No cloud required. No API keys. No subscriptions."
-            echo ""
-            echo "Tip: All apps can be run directly:"
-            echo "  ~/cece/apps/cece-cloud"
-            echo "  ~/cece/apps/cece-ai chat"
-            echo "  etc."
-            ;;
-        q|Q)
-            echo ""
-            echo "💜 Remember: You are sovereign."
-            echo "   The road remembers everything."
-            echo ""
-            exit 0
-            ;;
-        *)
-            echo "Unknown option: $1"
-            ;;
-    esac
-}
-
-# Main loop
 while true; do
-    show_banner
-    show_status
-    show_services
-    echo ""
-    echo -n "Select: "
-    read -n 1 CHOICE
-    echo ""
-    
-    run_app "$CHOICE"
-    
-    if [ "$CHOICE" != "q" ] && [ "$CHOICE" != "Q" ]; then
-        echo ""
-        echo "Press any key to continue..."
-        read -n 1
-    fi
+    echo -ne "${PINK}cece>${RESET} "
+    read -r cmd
+    [ "$cmd" = "exit" ] && break
+    [ -x ~/cece/apps/"$cmd" ] && ~/cece/apps/"$cmd" || echo "Unknown: $cmd"
 done
+
+echo -e "${PINK}Goodbye, dreamer. 🖤${RESET}"

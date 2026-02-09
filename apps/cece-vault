@@ -1,0 +1,50 @@
+#!/bin/bash
+# CECE-VAULT v1.0 - Our Own Password Manager
+VAULT=~/cece/vault
+SECRETS="$VAULT/secrets.enc"
+
+add_secret() {
+    echo -n "Name (e.g., github): "; read NAME
+    echo -n "Username: "; read USER
+    echo -n "Password: "; read -s PASS
+    echo ""
+    # Simple obfuscation (in prod would use real encryption)
+    ENCODED=$(echo "$USER:$PASS" | base64)
+    echo "$NAME|$ENCODED" >> "$SECRETS"
+    echo "🔐 Secret saved: $NAME"
+}
+
+get_secret() {
+    NAME=$1
+    LINE=$(grep "^$NAME|" "$SECRETS" 2>/dev/null)
+    if [ -n "$LINE" ]; then
+        ENCODED=$(echo "$LINE" | cut -d"|" -f2)
+        DECODED=$(echo "$ENCODED" | base64 -d)
+        USER=$(echo "$DECODED" | cut -d: -f1)
+        PASS=$(echo "$DECODED" | cut -d: -f2)
+        echo "🔐 $NAME"
+        echo "   User: $USER"
+        echo "   Pass: $PASS"
+    else
+        echo "Not found: $NAME"
+    fi
+}
+
+list_secrets() {
+    echo "🔐 Saved Secrets:"
+    cut -d"|" -f1 "$SECRETS" 2>/dev/null | while read name; do
+        echo "  • $name"
+    done
+}
+
+case "$1" in
+    add|a) add_secret ;;
+    get|g) get_secret "$2" ;;
+    list|ls) list_secrets ;;
+    *)
+        echo "CECE-VAULT - Our Own 1Password"
+        echo "  add       - Add secret"
+        echo "  get NAME  - Get secret"
+        echo "  list      - List secrets"
+        ;;
+esac
