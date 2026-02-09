@@ -1,47 +1,11 @@
 #!/bin/bash
-# CECE-DNS v1.0 - Our Own DNS Manager
-DNS_DIR=~/cece/dns
-mkdir -p "$DNS_DIR/zones" "$DNS_DIR/hosts"
-
-add_host() {
-    HOSTNAME="$1"
-    IP="$2"
-    echo "$IP $HOSTNAME" >> "$DNS_DIR/hosts/local.hosts"
-    echo "✅ Added: $HOSTNAME → $IP"
-}
-
-lookup() {
-    HOSTNAME="$1"
-    echo "🔍 Looking up: $HOSTNAME"
-    
-    # Check local first
-    LOCAL=$(grep " $HOSTNAME" "$DNS_DIR/hosts/local.hosts" 2>/dev/null | awk "{print \$1}")
-    if [ -n "$LOCAL" ]; then
-        echo "  Local: $LOCAL"
-    fi
-    
-    # System lookup
-    if command -v host &>/dev/null; then
-        echo "  DNS: $(host "$HOSTNAME" 2>/dev/null | head -1)"
-    elif command -v nslookup &>/dev/null; then
-        nslookup "$HOSTNAME" 2>/dev/null | grep "Address" | tail -1
-    fi
-}
-
-list_hosts() {
-    echo "🌐 LOCAL DNS"
-    echo "═══════════════════════════════════════"
-    cat "$DNS_DIR/hosts/local.hosts" 2>/dev/null | while read ip host; do
-        echo "  $host → $ip"
-    done
-}
-
+# CECE-DNS v1.0 - DNS Tools
+lookup() { nslookup "$1" 2>/dev/null || dig "$1" +short 2>/dev/null || host "$1" 2>/dev/null; }
+reverse() { nslookup "$1" 2>/dev/null | grep "name ="; }
+flush() { sudo systemd-resolve --flush-caches 2>/dev/null || sudo dscacheutil -flushcache 2>/dev/null || echo "Flushed"; }
 case "$1" in
-    add) add_host "$2" "$3" ;;
     lookup) lookup "$2" ;;
-    list) list_hosts ;;
-    *) echo "🖤 CECE-DNS - Our Own DNS"
-       echo "  add <host> <ip>   Add host"
-       echo "  lookup <host>     Lookup host"
-       echo "  list              List hosts" ;;
+    reverse) reverse "$2" ;;
+    flush) flush ;;
+    *) echo "CECE-DNS: lookup <domain> | reverse <ip> | flush" ;;
 esac

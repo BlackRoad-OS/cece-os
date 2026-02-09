@@ -1,57 +1,16 @@
 #!/bin/bash
-# CECE-MUSIC v1.0 - Our Own Spotify
+# CECE-MUSIC v1.0 - Music Player
 MUSIC_DIR=~/cece/music
-mkdir -p "$MUSIC_DIR/playlists" "$MUSIC_DIR/library"
-
-create_playlist() {
-    NAME="$1"
-    PLAYLIST="$MUSIC_DIR/playlists/$NAME.m3u"
-    echo "# $NAME Playlist" > "$PLAYLIST"
-    echo "# Created: $(date)" >> "$PLAYLIST"
-    echo "✅ Playlist created: $NAME"
+mkdir -p "$MUSIC_DIR"
+play() { mpg123 "$1" 2>/dev/null || aplay "$1" 2>/dev/null || echo "Install mpg123 for music"; }
+list() { find "$MUSIC_DIR" -name "*.mp3" -o -name "*.wav" 2>/dev/null; }
+radio() {
+    STATIONS=("http://stream.live.vc.bbcmedia.co.uk/bbc_radio_one" "http://ice1.somafm.com/groovesalad-256-mp3")
+    mpg123 "${STATIONS[$RANDOM % ${#STATIONS[@]}]}" 2>/dev/null || echo "Install mpg123 for radio"
 }
-
-add_song() {
-    PLAYLIST="$1"
-    SONG="$2"
-    ARTIST="$3"
-    echo "$ARTIST - $SONG" >> "$MUSIC_DIR/playlists/$PLAYLIST.m3u"
-    echo "✅ Added: $ARTIST - $SONG to $PLAYLIST"
-}
-
-play_playlist() {
-    PLAYLIST="$1"
-    PLAYLIST_FILE="$MUSIC_DIR/playlists/$PLAYLIST.m3u"
-    [ ! -f "$PLAYLIST_FILE" ] && echo "Playlist not found" && return
-    
-    echo "▶️  NOW PLAYING: $PLAYLIST"
-    echo "═══════════════════════════════════════"
-    echo ""
-    grep -v "^#" "$PLAYLIST_FILE" | while read -r song; do
-        echo "  🎵 $song"
-    done
-    echo ""
-    echo "  ⏮️  ⏸️  ⏭️   🔀  🔁"
-}
-
-list_playlists() {
-    echo "🎵 PLAYLISTS"
-    for p in "$MUSIC_DIR/playlists"/*.m3u 2>/dev/null; do
-        [ -f "$p" ] || continue
-        NAME=$(basename "$p" .m3u)
-        COUNT=$(grep -v "^#" "$p" | wc -l)
-        echo "  🎶 $NAME ($COUNT songs)"
-    done
-}
-
 case "$1" in
-    new) create_playlist "$2" ;;
-    add) add_song "$2" "$3" "$4" ;;
-    play) play_playlist "$2" ;;
-    list) list_playlists ;;
-    *) echo "🖤 CECE-MUSIC - Our Own Spotify"
-       echo "  new <name>                    Create playlist"
-       echo "  add <playlist> <song> <artist> Add song"
-       echo "  play <playlist>               Play playlist"
-       echo "  list                          List playlists" ;;
+    play) play "$2" ;;
+    list) list ;;
+    radio) radio ;;
+    *) echo "CECE-MUSIC: play <file> | list | radio" ;;
 esac
