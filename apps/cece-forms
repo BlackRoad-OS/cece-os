@@ -1,0 +1,71 @@
+#!/bin/bash
+# CECE-FORMS v1.0 - Our Own Google Forms/Typeform
+FORMS_DIR=~/cece/forms
+mkdir -p "$FORMS_DIR/forms" "$FORMS_DIR/responses"
+
+create_form() {
+    NAME="$1"
+    FORM_DIR="$FORMS_DIR/forms/$NAME"
+    mkdir -p "$FORM_DIR"
+    echo "name: $NAME" > "$FORM_DIR/form.info"
+    echo "created: $(date -Iseconds)" >> "$FORM_DIR/form.info"
+    echo "✅ Form created: $NAME"
+}
+
+add_question() {
+    FORM="$1"
+    QUESTION="$2"
+    TYPE="${3:-text}"
+    FORM_DIR="$FORMS_DIR/forms/$FORM"
+    Q_NUM=$(ls "$FORM_DIR"/q-*.txt 2>/dev/null | wc -l)
+    Q_NUM=$((Q_NUM + 1))
+    echo "question: $QUESTION" > "$FORM_DIR/q-$Q_NUM.txt"
+    echo "type: $TYPE" >> "$FORM_DIR/q-$Q_NUM.txt"
+    echo "✅ Added question $Q_NUM"
+}
+
+fill_form() {
+    FORM="$1"
+    FORM_DIR="$FORMS_DIR/forms/$FORM"
+    RESPONSE_ID=$(date +%s)
+    RESPONSE_FILE="$FORMS_DIR/responses/${FORM}_${RESPONSE_ID}.response"
+    
+    echo "📝 Filling form: $FORM"
+    echo "═══════════════════════════════════════"
+    echo ""
+    
+    for q in "$FORM_DIR"/q-*.txt; do
+        [ -f "$q" ] || continue
+        QUESTION=$(grep "question:" "$q" | cut -d: -f2-)
+        echo "$QUESTION"
+        read -r answer
+        echo "$(basename $q .txt):$answer" >> "$RESPONSE_FILE"
+    done
+    
+    echo ""
+    echo "✅ Response submitted!"
+}
+
+view_responses() {
+    FORM="$1"
+    echo "📊 Responses for: $FORM"
+    echo "═══════════════════════════════════════"
+    for r in "$FORMS_DIR/responses/${FORM}_"*.response 2>/dev/null; do
+        [ -f "$r" ] || continue
+        echo "--- Response $(basename $r .response | cut -d_ -f2) ---"
+        cat "$r"
+        echo ""
+    done
+}
+
+case "$1" in
+    new) create_form "$2" ;;
+    question) add_question "$2" "$3" "$4" ;;
+    fill) fill_form "$2" ;;
+    responses) view_responses "$2" ;;
+    *) echo "🖤 CECE-FORMS - Our Own Google Forms"
+       echo "  new <name>                    Create form"
+       echo "  question <form> <q> [type]    Add question"
+       echo "  fill <form>                   Fill out form"
+       echo "  responses <form>              View responses" ;;
+esac

@@ -1,0 +1,65 @@
+#!/bin/bash
+# CECE-SURVEY v1.0 - Our Own SurveyMonkey/Typeform
+SURVEY_DIR=~/cece/surveys
+mkdir -p "$SURVEY_DIR/surveys" "$SURVEY_DIR/responses"
+
+create_survey() {
+    NAME="$1"
+    mkdir -p "$SURVEY_DIR/surveys/$NAME"
+    echo "name: $NAME" > "$SURVEY_DIR/surveys/$NAME/survey.info"
+    echo "created: $(date -Iseconds)" >> "$SURVEY_DIR/surveys/$NAME/survey.info"
+    echo "✅ Survey created: $NAME"
+}
+
+add_question() {
+    SURVEY="$1"
+    QUESTION="$2"
+    OPTIONS="$3"
+    Q_NUM=$(ls "$SURVEY_DIR/surveys/$SURVEY"/q-*.txt 2>/dev/null | wc -l)
+    Q_NUM=$((Q_NUM + 1))
+    echo "question: $QUESTION" > "$SURVEY_DIR/surveys/$SURVEY/q-$Q_NUM.txt"
+    echo "options: $OPTIONS" >> "$SURVEY_DIR/surveys/$SURVEY/q-$Q_NUM.txt"
+    echo "✅ Question $Q_NUM added"
+}
+
+take_survey() {
+    SURVEY="$1"
+    RESPONSE_ID=$(date +%s)
+    RESPONSE_FILE="$SURVEY_DIR/responses/${SURVEY}_${RESPONSE_ID}.response"
+    
+    echo "📋 Taking survey: $SURVEY"
+    echo "═══════════════════════════════════════"
+    
+    for q in "$SURVEY_DIR/surveys/$SURVEY"/q-*.txt 2>/dev/null; do
+        [ -f "$q" ] || continue
+        QUESTION=$(grep "question:" "$q" | cut -d: -f2-)
+        OPTIONS=$(grep "options:" "$q" | cut -d: -f2-)
+        echo ""
+        echo "$QUESTION"
+        [ -n "$OPTIONS" ] && echo "  Options: $OPTIONS"
+        read -r answer
+        echo "$(basename $q .txt):$answer" >> "$RESPONSE_FILE"
+    done
+    
+    echo ""
+    echo "✅ Survey submitted!"
+}
+
+results() {
+    SURVEY="$1"
+    echo "📊 Results for: $SURVEY"
+    TOTAL=$(ls "$SURVEY_DIR/responses/${SURVEY}_"*.response 2>/dev/null | wc -l)
+    echo "  Total responses: $TOTAL"
+}
+
+case "$1" in
+    new) create_survey "$2" ;;
+    question) add_question "$2" "$3" "$4" ;;
+    take) take_survey "$2" ;;
+    results) results "$2" ;;
+    *) echo "🖤 CECE-SURVEY - Our Own SurveyMonkey"
+       echo "  new <name>                     Create survey"
+       echo "  question <survey> <q> [opts]   Add question"
+       echo "  take <survey>                  Take survey"
+       echo "  results <survey>               View results" ;;
+esac

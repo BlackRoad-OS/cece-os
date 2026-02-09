@@ -1,0 +1,48 @@
+#!/bin/bash
+# CECE-MONITOR v1.0 - Our Own Datadog/New Relic
+MON_DIR=~/cece/monitor
+mkdir -p "$MON_DIR/metrics" "$MON_DIR/alerts"
+
+collect() {
+    TIMESTAMP=$(date -Iseconds)
+    CPU=$(top -bn1 2>/dev/null | grep "Cpu" | awk "{print \$2}" | head -1 || echo "0")
+    MEM=$(free 2>/dev/null | grep Mem | awk "{print \$3/\$2 * 100.0}" || echo "0")
+    DISK=$(df -h / 2>/dev/null | tail -1 | awk "{print \$5}" | tr -d "%" || echo "0")
+    LOAD=$(uptime | awk -F"load average:" "{print \$2}" | awk "{print \$1}" | tr -d ",")
+    
+    echo "{\"time\":\"$TIMESTAMP\",\"cpu\":\"$CPU\",\"mem\":\"$MEM\",\"disk\":\"$DISK\",\"load\":\"$LOAD\"}" >> "$MON_DIR/metrics/$(date +%Y-%m-%d).jsonl"
+    echo "📊 Metrics collected"
+}
+
+dashboard() {
+    echo "📊 SYSTEM MONITOR"
+    echo "═══════════════════════════════════════"
+    echo ""
+    echo "  Hostname: $(hostname)"
+    echo "  Uptime:   $(uptime -p 2>/dev/null || uptime | awk -F"up " "{print \$2}" | cut -d, -f1)"
+    echo ""
+    echo "  Load Average: $(uptime | awk -F"load average:" "{print \$2}")"
+    echo ""
+    echo "  Memory:"
+    free -h 2>/dev/null | head -2 || echo "  (unavailable)"
+    echo ""
+    echo "  Disk:"
+    df -h / 2>/dev/null | tail -1 || echo "  (unavailable)"
+}
+
+set_alert() {
+    METRIC="$1"
+    THRESHOLD="$2"
+    echo "$METRIC:$THRESHOLD" > "$MON_DIR/alerts/$METRIC.alert"
+    echo "⚠️  Alert set: $METRIC > $THRESHOLD"
+}
+
+case "$1" in
+    collect) collect ;;
+    dashboard|dash) dashboard ;;
+    alert) set_alert "$2" "$3" ;;
+    *) echo "🖤 CECE-MONITOR - Our Own Datadog"
+       echo "  collect              Collect metrics"
+       echo "  dashboard            View dashboard"
+       echo "  alert <metric> <val> Set alert" ;;
+esac

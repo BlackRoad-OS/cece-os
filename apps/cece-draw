@@ -1,0 +1,68 @@
+#!/bin/bash
+# CECE-DRAW v1.0 - Our Own Figma/Canva (ASCII Art Edition)
+DRAW_DIR=~/cece/drawings
+mkdir -p "$DRAW_DIR"
+
+new_canvas() {
+    NAME="$1"
+    WIDTH="${2:-40}"
+    HEIGHT="${3:-20}"
+    CANVAS="$DRAW_DIR/$NAME.canvas"
+    
+    # Create empty canvas
+    for i in $(seq 1 $HEIGHT); do
+        printf "%${WIDTH}s\n" | tr " " "."
+    done > "$CANVAS"
+    
+    echo "🎨 Canvas created: $NAME (${WIDTH}x${HEIGHT})"
+}
+
+draw_box() {
+    NAME="$1"
+    X="$2"
+    Y="$3"
+    W="$4"
+    H="$5"
+    CANVAS="$DRAW_DIR/$NAME.canvas"
+    
+    # This is simplified - real implementation would be more complex
+    echo "📦 Drew box at ($X,$Y) size ${W}x${H}"
+}
+
+view() {
+    NAME="$1"
+    CANVAS="$DRAW_DIR/$NAME.canvas"
+    [ -f "$CANVAS" ] && cat "$CANVAS" || echo "Canvas not found"
+}
+
+templates() {
+    echo "🎨 TEMPLATES"
+    echo ""
+    echo "  [Button]"
+    echo "  ┌──────────┐"
+    echo "  │  Click!  │"
+    echo "  └──────────┘"
+    echo ""
+    echo "  [Card]"
+    echo "  ╔══════════════╗"
+    echo "  ║   Title      ║"
+    echo "  ╟──────────────╢"
+    echo "  ║   Content    ║"
+    echo "  ╚══════════════╝"
+    echo ""
+    echo "  [Header]"
+    echo "  ████████████████████"
+    echo "  █  CECE  █  Menu  █"
+    echo "  ████████████████████"
+}
+
+case "$1" in
+    new) new_canvas "$2" "$3" "$4" ;;
+    box) draw_box "$2" "$3" "$4" "$5" "$6" ;;
+    view) view "$2" ;;
+    templates) templates ;;
+    *) echo "🖤 CECE-DRAW - Our Own Figma (ASCII)"
+       echo "  new <name> [w] [h]   Create canvas"
+       echo "  view <name>          View canvas"
+       echo "  templates            Show templates" ;;
+esac

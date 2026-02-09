@@ -1,0 +1,54 @@
+#!/bin/bash
+# CECE-VPN v1.0 - Our Own Private Network Manager
+VPN_DIR=~/cece/vpn
+mkdir -p "$VPN_DIR/peers" "$VPN_DIR/config"
+
+# Note: This manages VPN configs, actual VPN requires WireGuard/OpenVPN
+
+add_peer() {
+    NAME="$1"
+    IP="$2"
+    cat > "$VPN_DIR/peers/$NAME.peer" << EOF
+name: $NAME
+ip: $IP
+added: $(date -Iseconds)
+status: active
+EOF
+    echo "✅ Peer added: $NAME ($IP)"
+}
+
+list_peers() {
+    echo "🔐 VPN PEERS"
+    echo "═══════════════════════════════════════"
+    for p in "$VPN_DIR/peers"/*.peer 2>/dev/null; do
+        [ -f "$p" ] || continue
+        NAME=$(grep "name:" "$p" | cut -d: -f2 | xargs)
+        IP=$(grep "ip:" "$p" | cut -d: -f2 | xargs)
+        echo "  🔗 $NAME - $IP"
+    done
+}
+
+status() {
+    echo "🔐 VPN STATUS"
+    echo "═══════════════════════════════════════"
+    echo ""
+    echo "  Local IP: $(hostname -I 2>/dev/null | awk "{print \$1}" || echo "unknown")"
+    echo "  Peers: $(ls "$VPN_DIR/peers"/*.peer 2>/dev/null | wc -l)"
+    echo ""
+    if command -v wg &>/dev/null; then
+        echo "  WireGuard: installed"
+        wg show 2>/dev/null || echo "  (no active tunnels)"
+    else
+        echo "  WireGuard: not installed"
+    fi
+}
+
+case "$1" in
+    add) add_peer "$2" "$3" ;;
+    list) list_peers ;;
+    status) status ;;
+    *) echo "🖤 CECE-VPN - Our Own VPN Manager"
+       echo "  add <name> <ip>   Add peer"
+       echo "  list              List peers"
+       echo "  status            VPN status" ;;
+esac

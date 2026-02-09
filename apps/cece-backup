@@ -1,0 +1,54 @@
+#!/bin/bash
+# CECE-BACKUP v1.0 - Our Own Backblaze/Carbonite
+BACKUP_DIR=~/cece/backups
+mkdir -p "$BACKUP_DIR/snapshots" "$BACKUP_DIR/schedules"
+
+backup() {
+    SOURCE="$1"
+    NAME="${2:-backup}"
+    TIMESTAMP=$(date +%Y%m%d_%H%M%S)
+    DEST="$BACKUP_DIR/snapshots/${NAME}_${TIMESTAMP}.tar.gz"
+    
+    echo "📦 Backing up $SOURCE..."
+    tar -czf "$DEST" "$SOURCE" 2>/dev/null
+    SIZE=$(du -h "$DEST" | cut -f1)
+    echo "✅ Backup complete: $DEST ($SIZE)"
+}
+
+restore() {
+    BACKUP="$1"
+    DEST="${2:-.}"
+    echo "📥 Restoring from $BACKUP..."
+    tar -xzf "$BACKUP_DIR/snapshots/$BACKUP" -C "$DEST" 2>/dev/null
+    echo "✅ Restored to $DEST"
+}
+
+list_backups() {
+    echo "📦 BACKUPS"
+    echo "═══════════════════════════════════════"
+    for b in "$BACKUP_DIR/snapshots"/*.tar.gz 2>/dev/null; do
+        [ -f "$b" ] || continue
+        NAME=$(basename "$b")
+        SIZE=$(du -h "$b" | cut -f1)
+        echo "  📦 $NAME ($SIZE)"
+    done
+}
+
+prune() {
+    KEEP="${1:-5}"
+    echo "🗑️  Keeping last $KEEP backups..."
+    ls -t "$BACKUP_DIR/snapshots"/*.tar.gz 2>/dev/null | tail -n +$((KEEP + 1)) | xargs rm -f 2>/dev/null
+    echo "✅ Pruned old backups"
+}
+
+case "$1" in
+    backup) backup "$2" "$3" ;;
+    restore) restore "$2" "$3" ;;
+    list) list_backups ;;
+    prune) prune "$2" ;;
+    *) echo "🖤 CECE-BACKUP - Our Own Backblaze"
+       echo "  backup <path> [name]   Create backup"
+       echo "  restore <file> [dest]  Restore backup"
+       echo "  list                   List backups"
+       echo "  prune [keep]           Remove old backups" ;;
+esac

@@ -1,0 +1,88 @@
+#!/bin/bash
+# CECE-SIGN v1.0 - Our Own DocuSign
+SIGN_DIR=~/cece/signatures
+mkdir -p "$SIGN_DIR/documents" "$SIGN_DIR/signed"
+
+create_doc() {
+    NAME="$1"
+    CONTENT="$2"
+    DOC_ID=$(date +%s | tail -c 6)
+    cat > "$SIGN_DIR/documents/$DOC_ID.doc" << EOF
+id: $DOC_ID
+name: $NAME
+created: $(date -Iseconds)
+status: pending
+---
+$CONTENT
+
+___________________________
+Signature
+
+___________________________
+Date
+EOF
+    echo "✅ Document created: $NAME (ID: $DOC_ID)"
+}
+
+sign() {
+    DOC_ID="$1"
+    SIGNER="$2"
+    DOC="$SIGN_DIR/documents/$DOC_ID.doc"
+    
+    if [ ! -f "$DOC" ]; then
+        echo "Document not found"
+        return
+    fi
+    
+    SIGNED="$SIGN_DIR/signed/${DOC_ID}_signed.doc"
+    cp "$DOC" "$SIGNED"
+    
+    # Add signature
+    echo "" >> "$SIGNED"
+    echo "═══════════════════════════════════════" >> "$SIGNED"
+    echo "SIGNED BY: $SIGNER" >> "$SIGNED"
+    echo "DATE: $(date)" >> "$SIGNED"
+    echo "HASH: $(echo "$SIGNER$(date)" | shasum -a 256 | cut -c1-16)" >> "$SIGNED"
+    echo "═══════════════════════════════════════" >> "$SIGNED"
+    
+    # Update status
+    sed -i "s/status: pending/status: signed/" "$DOC"
+    
+    echo "✅ Document signed by $SIGNER"
+    echo "   Signature hash: $(echo "$SIGNER$(date)" | shasum -a 256 | cut -c1-16)"
+}
+
+verify() {
+    DOC_ID="$1"
+    SIGNED="$SIGN_DIR/signed/${DOC_ID}_signed.doc"
+    
+    if [ -f "$SIGNED" ]; then
+        echo "✅ Document is signed"
+        grep -A3 "SIGNED BY:" "$SIGNED"
+    else
+        echo "❌ Document not signed"
+    fi
+}
+
+list_docs() {
+    echo "📄 DOCUMENTS"
+    for d in "$SIGN_DIR/documents"/*.doc 2>/dev/null; do
+        [ -f "$d" ] || continue
+        ID=$(grep "^id:" "$d" | cut -d: -f2 | xargs)
+        NAME=$(grep "^name:" "$d" | cut -d: -f2-)
+        STATUS=$(grep "^status:" "$d" | cut -d: -f2 | xargs)
+        echo "  📄 $NAME (ID: $ID) [$STATUS]"
+    done
+}
+
+case "$1" in
+    new) create_doc "$2" "$3" ;;
+    sign) sign "$2" "$3" ;;
+    verify) verify "$2" ;;
+    list) list_docs ;;
+    *) echo "🖤 CECE-SIGN - Our Own DocuSign"
+       echo "  new <name> <content>   Create document"
+       echo "  sign <id> <signer>     Sign document"
+       echo "  verify <id>            Verify signature"
+       echo "  list                   List documents" ;;
+esac
