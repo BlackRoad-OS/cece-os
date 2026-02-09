@@ -1,0 +1,162 @@
+#!/bin/bash
+#═══════════════════════════════════════════════════════════════
+#  CECE-MUSIC v1.0 - Simple Music/Sound Maker
+#  Uses speaker-test or beep if available
+#═══════════════════════════════════════════════════════════════
+
+# Note frequencies (Hz)
+declare -A NOTES
+NOTES[C]=262
+NOTES[D]=294
+NOTES[E]=330
+NOTES[F]=349
+NOTES[G]=392
+NOTES[A]=440
+NOTES[B]=494
+NOTES[C2]=523
+
+play_note() {
+    NOTE=$1
+    DURATION=${2:-0.2}
+    FREQ=${NOTES[$NOTE]:-440}
+    
+    # Try different methods
+    if command -v beep &> /dev/null; then
+        beep -f $FREQ -l $((DURATION * 1000)) 2>/dev/null
+    elif command -v speaker-test &> /dev/null; then
+        timeout $DURATION speaker-test -t sine -f $FREQ &>/dev/null
+    else
+        # ASCII visualization instead
+        echo -n "♪"
+    fi
+}
+
+play_song() {
+    case "$1" in
+        scale)
+            echo "Playing: C Major Scale"
+            for note in C D E F G A B C2; do
+                echo -n "$note "
+                play_note $note 0.3
+            done
+            echo ""
+            ;;
+        twinkle)
+            echo "Playing: Twinkle Twinkle"
+            for note in C C G G A A G F F E E D D C; do
+                echo -n "$note "
+                play_note $note 0.3
+            done
+            echo ""
+            ;;
+        ode)
+            echo "Playing: Ode to Joy (excerpt)"
+            for note in E E F G G F E D C C D E E D D; do
+                echo -n "$note "
+                play_note $note 0.3
+            done
+            echo ""
+            ;;
+        beep)
+            echo "Playing: Computer Beep"
+            play_note A 0.1
+            play_note A 0.1
+            echo ""
+            ;;
+        *)
+            # Play custom notes
+            echo "Playing: $*"
+            for note in $*; do
+                NOTE=$(echo "$note" | tr "[:lower:]" "[:upper:]")
+                echo -n "$NOTE "
+                play_note $NOTE 0.3
+            done
+            echo ""
+            ;;
+    esac
+}
+
+visualize() {
+    echo "╔═══════════════════════════════════════════════════════════╗"
+    echo "║              🎹 PIANO KEYBOARD 🎹                         ║"
+    echo "╠═══════════════════════════════════════════════════════════╣"
+    echo "║  ┌───┬───┬───┬───┬───┬───┬───┬───┐                        ║"
+    echo "║  │   │▓▓▓│▓▓▓│   │▓▓▓│▓▓▓│▓▓▓│   │                        ║"
+    echo "║  │   │▓▓▓│▓▓▓│   │▓▓▓│▓▓▓│▓▓▓│   │                        ║"
+    echo "║  │ C │ D │ E │ F │ G │ A │ B │ C │                        ║"
+    echo "║  └───┴───┴───┴───┴───┴───┴───┴───┘                        ║"
+    echo "╚═══════════════════════════════════════════════════════════╝"
+}
+
+compose() {
+    echo "╔═══════════════════════════════════════════════════════════╗"
+    echo "║              🎼 COMPOSE MODE 🎼                           ║"
+    echo "╚═══════════════════════════════════════════════════════════╝"
+    echo ""
+    echo "Enter notes (C D E F G A B) separated by spaces."
+    echo "Type \"play\" to hear, \"save\" to save, \"quit\" to exit."
+    echo ""
+    
+    SONG=""
+    while true; do
+        echo -n "♪ "
+        read INPUT
+        case "$INPUT" in
+            play)
+                play_song $SONG
+                ;;
+            save)
+                echo -n "Song name: "
+                read NAME
+                echo "$SONG" > ~/cece/data/songs/"$NAME.song"
+                echo "✓ Saved as $NAME"
+                ;;
+            quit|exit)
+                break
+                ;;
+            clear)
+                SONG=""
+                echo "Song cleared."
+                ;;
+            *)
+                SONG="$SONG $INPUT"
+                echo "Added: $INPUT"
+                ;;
+        esac
+    done
+}
+
+mkdir -p ~/cece/data/songs
+
+case "$1" in
+    play)
+        shift
+        play_song "$@"
+        ;;
+    compose|c)
+        compose
+        ;;
+    keyboard|k|piano)
+        visualize
+        ;;
+    songs|list)
+        echo "Saved songs:"
+        ls ~/cece/data/songs/*.song 2>/dev/null | while read f; do
+            NAME=$(basename "$f" .song)
+            echo "  $NAME"
+        done
+        ;;
+    *)
+        echo "CECE-MUSIC v1.0 - Music Maker"
+        echo ""
+        echo "Usage: cece-music [command]"
+        echo ""
+        echo "  play scale   - Play C major scale"
+        echo "  play twinkle - Play Twinkle Twinkle"
+        echo "  play ode     - Play Ode to Joy"
+        echo "  play C D E   - Play custom notes"
+        echo "  compose      - Enter compose mode"
+        echo "  keyboard     - Show keyboard"
+        echo "  songs        - List saved songs"
+        ;;
+esac
